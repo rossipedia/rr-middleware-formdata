@@ -1,6 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { FieldValues, RegisterOptions, Resolver } from 'react-hook-form';
-import { data, Form, unstable_RouterContextProvider } from 'react-router';
+import clsx from 'clsx';
+import { useEffect } from 'react';
+import type { FieldValues, Resolver } from 'react-hook-form';
+import {
+  data,
+  Form,
+  unstable_RouterContextProvider,
+  useNavigation,
+} from 'react-router';
 import {
   getValidatedFormData,
   RemixFormProvider,
@@ -10,7 +17,6 @@ import {
 import { z } from 'zod';
 import { formDataMiddleware, getFormData } from '~/.server/formData.context';
 import { Route } from './+types/_._index';
-import clsx from 'clsx';
 
 const FormSchema = z.object({
   email: z.string().email('Invalid email address.'),
@@ -101,16 +107,19 @@ async function getValidatedFormSubmission<R extends FieldValues>(
   context: unstable_RouterContextProvider,
   resolver: Resolver<R>
 ) {
-  const fd = getFormData(context);
-  if (!fd) {
+  const ctx = getFormData(context);
+  if (!ctx) {
     throw new Response(null, { status: 400 });
   }
+  const { formData: fd, intercept } = ctx;
   const validation = await getValidatedFormData(fd, resolver);
 
   if (validation.errors) {
-    throw data(
-      { errors: validation.errors, defaultValues: validation.receivedValues },
-      { status: 422 }
+    return intercept(
+      data(
+        { errors: validation.errors, defaultValues: validation.receivedValues },
+        { status: 422 }
+      )
     );
   }
 
