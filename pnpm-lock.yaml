@@ -44,6 +44,9 @@ importers:
       remix-hook-form:
         specifier: ^7.0.0
         version: 7.0.0(react-dom@19.1.0(react@19.1.0))(react-hook-form@7.55.0(react@19.1.0))(react-router@7.5.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+      turbo-stream:
+        specifier: ^2
+        version: 2.4.0
       zod:
         specifier: ^3.24.2
         version: 3.24.2
