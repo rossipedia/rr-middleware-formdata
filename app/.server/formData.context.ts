@@ -39,14 +39,14 @@ export const formDataMiddleware: unstable_MiddlewareFunction = async (
     contentType?.startsWith('multipart/form-data');
 
   if (!isFormData) {
-    console.log(' -> !isFormData');
+    // console.log(' -> !isFormData');
     return next();
   }
 
-  console.log(' -> isFormData, cloning request');
+  // console.log(' -> isFormData, cloning request');
   const clonedRequest = request.clone();
   const fd = await clonedRequest.formData();
-  console.log(' -> isFormData, setting context formData');
+  // console.log(' -> isFormData, setting context formData');
 
   const { promise, resolve } = Promise.withResolvers<
     Response | UNSAFE_DataWithResponseInit<unknown>
@@ -55,7 +55,7 @@ export const formDataMiddleware: unstable_MiddlewareFunction = async (
   const intercept = (
     response: Response | UNSAFE_DataWithResponseInit<unknown>
   ) => {
-    console.log(' -> intercepting response');
+    // console.log(' -> intercepting response');
     // https://i.imgflip.com/9puttn.jpg
     if ('data' in response) {
       const { data, init } = response;
@@ -78,15 +78,15 @@ export const formDataMiddleware: unstable_MiddlewareFunction = async (
     intercept,
   });
 
-  console.log(' -> next()');
+  // console.log(' -> next()');
   const resp = await Promise.race([next(), promise]);
 
   if (!(resp instanceof Response) || resp.status !== 422) {
-    console.log(' -> returning response unaltered');
+    // console.log(' -> returning response unaltered');
     return resp;
   }
 
-  console.log(' -> returning new response from', resp.status);
+  // console.log(' -> returning new response from', resp.status);
   const headers = new Headers(resp.headers);
   headers.append('X-Intercepted-FormData', 'true');
   return new Response(resp.body, { ...resp, headers, status: 200 });

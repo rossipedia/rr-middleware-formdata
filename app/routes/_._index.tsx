@@ -34,7 +34,7 @@ export const unstable_middleware = [formDataMiddleware];
 
 export async function action({ context }: Route.ActionArgs) {
   const { data } = await getValidatedFormSubmission(context, formResolver);
-  console.log({ data });
+  console.log('Got successfully validated data', data);
   return { result: 'success' as const };
 }
 
@@ -46,6 +46,7 @@ function Component({ actionData }: Route.ComponentProps) {
       username: '',
     },
     resolver: formResolver,
+    mode: 'all',
   });
 
   return (
@@ -56,6 +57,11 @@ function Component({ actionData }: Route.ComponentProps) {
           className="flex flex-col gap-2"
           // onSubmit={formContext.handleSubmit}
         >
+          {actionData?.result === 'success' && (
+            <div className="alert alert-success">
+              Form submitted successfully!
+            </div>
+          )}
           <Field name="username" placeholder="username" type="text" />
           <Field name="email" placeholder="email" type="text" />
           <Field name="password" placeholder="password" type="password" />
