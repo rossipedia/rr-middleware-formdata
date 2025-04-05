@@ -1,12 +1,20 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { generateFormData } from 'remix-hook-form';
 import {
+  UNSAFE_DataWithResponseInit,
   unstable_createContext,
   unstable_MiddlewareFunction,
   unstable_RouterContextProvider,
 } from 'react-router';
+import { encode } from 'turbo-stream';
 
-const formDataContext = unstable_createContext<FormData | undefined>();
+const formDataContext = unstable_createContext<
+  | {
+      formData: FormData;
+      intercept: (
+        response: Response | UNSAFE_DataWithResponseInit<unknown>
+      ) => Promise<never>;
+    }
+  | undefined
+>();
 
 export function getFormData(context: unstable_RouterContextProvider) {
   return context.get(formDataContext);
@@ -39,10 +47,39 @@ export const formDataMiddleware: unstable_MiddlewareFunction = async (
   const clonedRequest = request.clone();
   const fd = await clonedRequest.formData();
   console.log(' -> isFormData, setting context formData');
-  context.set(formDataContext, fd);
+
+  const { promise, resolve } = Promise.withResolvers<
+    Response | UNSAFE_DataWithResponseInit<unknown>
+  >();
+
+  const intercept = (
+    response: Response | UNSAFE_DataWithResponseInit<unknown>
+  ) => {
+    console.log(' -> intercepting response');
+    // https://i.imgflip.com/9puttn.jpg
+    if ('data' in response) {
+      const { data, init } = response;
+      const body = encode({ data });
+      response = new Response(body, {
+        ...init,
+        headers: {
+          ...init?.headers,
+          'Content-Type': 'text/x-script',
+          'X-Remix-Response': 'yes',
+        },
+      });
+    }
+    resolve(response);
+    return new Promise<never>(() => {});
+  };
+
+  context.set(formDataContext, {
+    formData: fd,
+    intercept,
+  });
 
   console.log(' -> next()');
-  const resp = await next();
+  const resp = await Promise.race([next(), promise]);
 
   if (!(resp instanceof Response) || resp.status !== 422) {
     console.log(' -> returning response unaltered');
