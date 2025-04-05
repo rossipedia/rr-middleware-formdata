@@ -78,16 +78,5 @@ export const formDataMiddleware: unstable_MiddlewareFunction = async (
     intercept,
   });
 
-  // console.log(' -> next()');
-  const resp = await Promise.race([next(), promise]);
-
-  if (!(resp instanceof Response) || resp.status !== 422) {
-    // console.log(' -> returning response unaltered');
-    return resp;
-  }
-
-  // console.log(' -> returning new response from', resp.status);
-  const headers = new Headers(resp.headers);
-  headers.append('X-Intercepted-FormData', 'true');
-  return new Response(resp.body, { ...resp, headers, status: 200 });
+  return await Promise.race([next(), promise]);
 };
